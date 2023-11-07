@@ -18,7 +18,7 @@ func initializeStructureRecipes() []StructureRecipe {
 		{
 			Structure: "Furnace",
 			RequiredResources: []ResourceRequirement{
-				{ResourceName: "Metal", Amount: 10},
+				{ResourceName: "Steel", Amount: 10},
 			},
 		},
 	}

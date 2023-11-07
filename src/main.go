@@ -192,7 +192,7 @@ func main() {
 				rl.DrawText(resourceText, textX, textY, 20, rl.White)
 			}
 		}
-		rl.DrawRectangleLines(387, 387, 140, 20*maxVisibleResources+16, rl.White)
+		rl.DrawRectangleLines(387, 378, 140, 20*maxVisibleResources+16, rl.White)
 
 		for _, button := range buttons {
 			rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)

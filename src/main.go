@@ -41,31 +41,34 @@ func main() {
 
 		// Generate a string with required resources for the tooltip
 		for _, req := range recipe.RequiredResources {
-			tooltip += fmt.Sprintf("\n%s:%d, ", req.ResourceName, req.Amount)
+			tooltip += fmt.Sprintf("\n%s: %d, ", req.ResourceName, req.Amount)
 		}
 		tooltip = strings.TrimSuffix(tooltip, ", ") // Remove the trailing comma and space
 
 		buttons = append(buttons, CreateButton(532, int32(390+32*i), 220, 32, buttonLabel,
-			func(structureName string) func() {
+			func(structureName string, requiredResources []ResourceRequirement) func() {
 				return func() {
 					if selectedTileIndex != -1 {
 						enoughResources := true
 
-						for _, req := range recipe.RequiredResources {
+						// Check if required resources are available
+						for _, req := range requiredResources {
+							foundResource := false
 							for _, resource := range resources {
-								if resource.Name == req.ResourceName && resource.Amount < req.Amount {
-									enoughResources = false
+								if resource.Name == req.ResourceName && resource.Amount >= req.Amount {
+									foundResource = true
 									break
 								}
 							}
-							if !enoughResources {
+							if !foundResource {
+								enoughResources = false
 								break
 							}
 						}
 
 						if enoughResources {
 							// Deduct the required resources
-							for _, req := range recipe.RequiredResources {
+							for _, req := range requiredResources {
 								for i, resource := range resources {
 									if resource.Name == req.ResourceName {
 										resources[i].Amount -= req.Amount
@@ -75,33 +78,26 @@ func main() {
 
 							// Add the structure to the selected tile
 							tiles[selectedTileIndex].Structure = structureName
+						} else {
+							// Provide feedback to the player that resources are insufficient
+							fmt.Println("Insufficient resources to build", structureName)
 						}
 					}
 				}
-			}(structureName), tooltip))
+			}(structureName, recipe.RequiredResources), tooltip))
 	}
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 
+		mousePosition := rl.GetMousePosition()
+
 		if rl.IsKeyPressed(rl.KeyDown) && scrollPosition < maxScrollPosition {
 			scrollPosition++
 		}
 		if rl.IsKeyPressed(rl.KeyUp) && scrollPosition > 0 {
 			scrollPosition--
-		}
-
-		// Detect button clicks
-		mousePosition := rl.GetMousePosition()
-		for i, button := range buttons {
-			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) {
-				if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-					buttons[i].Action()
-				} else if button.Tooltip != "" {
-					DrawButtonTooltip(button)
-				}
-			}
 		}
 
 		// Check for mouse wheel input
@@ -201,6 +197,17 @@ func main() {
 		for _, button := range buttons {
 			rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)
 			rl.DrawText(button.Label, button.X+8, button.Y+8, 20, rl.White)
+		}
+
+		// Detect button clicks
+		for i, button := range buttons {
+			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) {
+				if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+					buttons[i].Action()
+				} else if button.Tooltip != "" {
+					DrawButtonTooltip(button)
+				}
+			}
 		}
 
 		if devMode {

@@ -6,49 +6,6 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-type Resource struct {
-	Name   string
-	Amount int
-}
-
-type StructureRecipe struct {
-	Structure         string
-	RequiredResources []ResourceRequirement
-}
-
-type ResourceRequirement struct {
-	ResourceName string
-	Amount       int
-}
-
-type Tile struct {
-	ResourceType   string
-	ResourceAmount int
-	TerrainType    string
-	Structure      string
-}
-
-type ButtonAction func()
-
-type Button struct {
-	X, Y   int32
-	Width  int32
-	Height int32
-	Label  string
-	Action ButtonAction
-}
-
-func CreateButton(x, y, width, height int32, label string, action ButtonAction) Button {
-	return Button{
-		X:      x,
-		Y:      y,
-		Width:  width,
-		Height: height,
-		Label:  label,
-		Action: action,
-	}
-}
-
 func isMouseHover(x, y, width, height int32) bool {
 	return rl.GetMouseX() >= x && rl.GetMouseX() <= x+width && rl.GetMouseY() >= y && rl.GetMouseY() <= y+height
 }

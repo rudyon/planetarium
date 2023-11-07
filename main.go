@@ -11,6 +11,16 @@ type Resource struct {
 	Amount int
 }
 
+type StructureRecipe struct {
+	Structure         string
+	RequiredResources []ResourceRequirement
+}
+
+type ResourceRequirement struct {
+	ResourceName string
+	Amount       int
+}
+
 type Tile struct {
 	ResourceType   string
 	ResourceAmount int
@@ -18,21 +28,24 @@ type Tile struct {
 	Structure      string
 }
 
+type ButtonAction func()
+
 type Button struct {
 	X, Y   int32
 	Width  int32
 	Height int32
 	Label  string
-	Action func() // Function to be executed when the button is clicked
+	Action ButtonAction
 }
 
-func NewButton(x, y, width, height int32, label string) Button {
+func CreateButton(x, y, width, height int32, label string, action ButtonAction) Button {
 	return Button{
 		X:      x,
 		Y:      y,
 		Width:  width,
 		Height: height,
 		Label:  label,
+		Action: action,
 	}
 }
 
@@ -51,6 +64,7 @@ func main() {
 	const maxVisibleResources = 3
 	var tiles []Tile
 	var resources []Resource
+	var structureRecipes []StructureRecipe
 	var scrollPosition = 0
 	var devMode = false
 
@@ -61,6 +75,15 @@ func main() {
 		{"Silica", 100},
 		{"Metal", 50},
 		{"Energy", 200},
+	}
+
+	structureRecipes = []StructureRecipe{
+		{
+			Structure: "Miner",
+			RequiredResources: []ResourceRequirement{
+				{ResourceName: "Metal", Amount: 10},
+			},
+		},
 	}
 
 	maxScrollPosition := len(resources) - maxVisibleResources
@@ -97,18 +120,42 @@ func main() {
 	solSystem := NewStarSystem(celestials)
 
 	buttons := []Button{
-		{
-			X:      424,
-			Y:      278,
-			Width:  120,
-			Height: 32,
-			Label:  "Construct",
-			Action: func() {
+		CreateButton(424, 278, 120, 32, "Construct",
+			func() {
 				if selectedTileIndex != -1 {
-					tiles[selectedTileIndex].Structure = "Miner"
+					for _, recipe := range structureRecipes {
+						if recipe.Structure == "Miner" {
+							enoughResources := true
+
+							for _, req := range recipe.RequiredResources {
+								for _, resource := range resources {
+									if resource.Name == req.ResourceName && resource.Amount < req.Amount {
+										enoughResources = false
+										break
+									}
+								}
+								if !enoughResources {
+									break
+								}
+							}
+
+							if enoughResources {
+								// Deduct the required resources
+								for _, req := range recipe.RequiredResources {
+									for i, resource := range resources {
+										if resource.Name == req.ResourceName {
+											resources[i].Amount -= req.Amount
+										}
+									}
+								}
+
+								// Add the Miner to the selected tile
+								tiles[selectedTileIndex].Structure = "Miner"
+							}
+						}
+					}
 				}
-			},
-		},
+			}),
 	}
 
 	for !rl.WindowShouldClose() {

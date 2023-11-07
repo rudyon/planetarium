@@ -8,5 +8,11 @@ func initializeStructureRecipes() []StructureRecipe {
 				{ResourceName: "Metal", Amount: 10},
 			},
 		},
+		{
+			Structure: "Furnace",
+			RequiredResources: []ResourceRequirement{
+				{ResourceName: "Metal", Amount: 10},
+			},
+		},
 	}
 }

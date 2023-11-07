@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -31,43 +32,53 @@ func main() {
 	tiles = createTiles()
 	solSystem := createSolSystem()
 
-	buttons := []Button{
-		CreateButton(424, 278, 120, 32, "Construct",
-			func() {
-				if selectedTileIndex != -1 {
-					for _, recipe := range structureRecipes {
-						if recipe.Structure == "Miner" {
-							enoughResources := true
+	buttons := []Button{}
 
-							for _, req := range recipe.RequiredResources {
-								for _, resource := range resources {
-									if resource.Name == req.ResourceName && resource.Amount < req.Amount {
-										enoughResources = false
-										break
-									}
-								}
-								if !enoughResources {
+	for i, recipe := range structureRecipes {
+		structureName := recipe.Structure
+		buttonLabel := "Construct " + structureName
+		tooltip := "Required Resources: "
+
+		// Generate a string with required resources for the tooltip
+		for _, req := range recipe.RequiredResources {
+			tooltip += fmt.Sprintf("\n%s:%d, ", req.ResourceName, req.Amount)
+		}
+		tooltip = strings.TrimSuffix(tooltip, ", ") // Remove the trailing comma and space
+
+		buttons = append(buttons, CreateButton(532, int32(390+32*i), 220, 32, buttonLabel,
+			func(structureName string) func() {
+				return func() {
+					if selectedTileIndex != -1 {
+						enoughResources := true
+
+						for _, req := range recipe.RequiredResources {
+							for _, resource := range resources {
+								if resource.Name == req.ResourceName && resource.Amount < req.Amount {
+									enoughResources = false
 									break
 								}
 							}
+							if !enoughResources {
+								break
+							}
+						}
 
-							if enoughResources {
-								// Deduct the required resources
-								for _, req := range recipe.RequiredResources {
-									for i, resource := range resources {
-										if resource.Name == req.ResourceName {
-											resources[i].Amount -= req.Amount
-										}
+						if enoughResources {
+							// Deduct the required resources
+							for _, req := range recipe.RequiredResources {
+								for i, resource := range resources {
+									if resource.Name == req.ResourceName {
+										resources[i].Amount -= req.Amount
 									}
 								}
-
-								// Add the Miner to the selected tile
-								tiles[selectedTileIndex].Structure = "Miner"
 							}
+
+							// Add the structure to the selected tile
+							tiles[selectedTileIndex].Structure = structureName
 						}
 					}
 				}
-			}),
+			}(structureName), tooltip))
 	}
 
 	for !rl.WindowShouldClose() {
@@ -84,8 +95,12 @@ func main() {
 		// Detect button clicks
 		mousePosition := rl.GetMousePosition()
 		for i, button := range buttons {
-			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-				buttons[i].Action()
+			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) {
+				if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+					buttons[i].Action()
+				} else if button.Tooltip != "" {
+					DrawButtonTooltip(button)
+				}
 			}
 		}
 
@@ -189,8 +204,9 @@ func main() {
 		}
 
 		if devMode {
-			rl.DrawLine(rl.GetMouseX()-9999, rl.GetMouseY(), rl.GetMouseX()+9999, rl.GetMouseY(), rl.Pink)
-			rl.DrawLine(rl.GetMouseX(), rl.GetMouseY()-9999, rl.GetMouseY(), rl.GetMouseY()+9999, rl.Pink)
+			const lineLength = 1000 // Adjust the line length as needed
+			rl.DrawLine(rl.GetMouseX()-lineLength, rl.GetMouseY(), rl.GetMouseX()+lineLength, rl.GetMouseY(), rl.Pink)
+			rl.DrawLine(rl.GetMouseX(), rl.GetMouseY()-lineLength, rl.GetMouseX(), rl.GetMouseY()+lineLength, rl.Pink)
 			rl.DrawText(fmt.Sprintf("X: %d\nY: %d", rl.GetMouseX(), rl.GetMouseY()), rl.GetMouseX()+8, rl.GetMouseY()+8, 20, rl.Pink)
 		}
 

@@ -55,3 +55,20 @@ func (s *StarSystem) Draw(screenSplitHorizontal, screenSplitVertical float32) {
 		totalDistance += distance
 	}
 }
+
+func createSolSystem() StarSystem {
+	// Define the celestial objects for the Sol System
+	sun := NewCelestial("Sol", "Star", 20, rl.Yellow)
+	mercury := NewCelestial("Mercury", "Terrestrial", 4, rl.LightGray)
+	venus := NewCelestial("Venus", "Terrestrial", 5.5, rl.Orange)
+	earth := NewCelestial("Terra", "Terrestrial", 6, rl.Blue)
+	mars := NewCelestial("Mars", "Terrestrial", 5, rl.Red)
+	jupiter := NewCelestial("Jupiter", "Gas Giant", 18, rl.Brown)
+	saturn := NewCelestial("Saturn", "Gas Giant", 16, rl.Beige)
+	uranus := NewCelestial("Uranus", "Gas Giant", 10, rl.SkyBlue)
+	neptune := NewCelestial("Neptune", "Gas Giant", 9, rl.DarkBlue)
+
+	// Create the StarSystem with the Celestial objects
+	celestials := []Celestial{sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune}
+	return NewStarSystem(celestials)
+}

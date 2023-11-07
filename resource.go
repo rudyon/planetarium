@@ -14,3 +14,11 @@ type ResourceRequirement struct {
 	ResourceName string
 	Amount       int
 }
+
+func initializeResources() []Resource {
+	return []Resource{
+		{"Silica", 100},
+		{"Metal", 50},
+		{"Energy", 200},
+	}
+}

@@ -6,10 +6,6 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func isMouseHover(x, y, width, height int32) bool {
-	return rl.GetMouseX() >= x && rl.GetMouseX() <= x+width && rl.GetMouseY() >= y && rl.GetMouseY() <= y+height
-}
-
 func main() {
 	const windowWidth = 800
 	const windowHeight = windowWidth
@@ -24,57 +20,16 @@ func main() {
 	var structureRecipes []StructureRecipe
 	var scrollPosition = 0
 	var devMode = false
+	var selectedTileIndex int = -1
+	var maxScrollPosition int
 
 	rl.InitWindow(windowWidth, windowHeight, "Planetarium")
 	rl.SetTargetFPS(60)
 
-	resources = []Resource{
-		{"Silica", 100},
-		{"Metal", 50},
-		{"Energy", 200},
-	}
-
-	structureRecipes = []StructureRecipe{
-		{
-			Structure: "Miner",
-			RequiredResources: []ResourceRequirement{
-				{ResourceName: "Metal", Amount: 10},
-			},
-		},
-	}
-
-	maxScrollPosition := len(resources) - maxVisibleResources
-	selectedTileIndex := -1 // Initialize with an invalid index
-
-	for i := 0; i < 25; i++ {
-		resourceType := "Silica"
-		resourceAmount := i * 10
-		terrainType := "Plains"
-
-		tile := Tile{
-			ResourceType:   resourceType,
-			ResourceAmount: resourceAmount,
-			TerrainType:    terrainType,
-			Structure:      "None",
-		}
-
-		tiles = append(tiles, tile)
-	}
-
-	// Define the celestial objects for the Sol System
-	sun := NewCelestial("Sol", "Star", 20, rl.Yellow)
-	mercury := NewCelestial("Mercury", "Terrestrial", 4, rl.LightGray)
-	venus := NewCelestial("Venus", "Terrestrial", 5.5, rl.Orange)
-	earth := NewCelestial("Terra", "Terrestrial", 6, rl.Blue)
-	mars := NewCelestial("Mars", "Terrestrial", 5, rl.Red)
-	jupiter := NewCelestial("Jupiter", "Gas Giant", 18, rl.Brown)
-	saturn := NewCelestial("Saturn", "Gas Giant", 16, rl.Beige)
-	uranus := NewCelestial("Uranus", "Gas Giant", 10, rl.SkyBlue)
-	neptune := NewCelestial("Neptune", "Gas Giant", 9, rl.DarkBlue)
-
-	// Create the StarSystem with the Celestial objects
-	celestials := []Celestial{sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune}
-	solSystem := NewStarSystem(celestials)
+	resources = initializeResources()
+	structureRecipes = initializeStructureRecipes()
+	tiles = createTiles()
+	solSystem := createSolSystem()
 
 	buttons := []Button{
 		CreateButton(424, 278, 120, 32, "Construct",
@@ -116,11 +71,22 @@ func main() {
 	}
 
 	for !rl.WindowShouldClose() {
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.Black)
+
 		if rl.IsKeyPressed(rl.KeyDown) && scrollPosition < maxScrollPosition {
 			scrollPosition++
 		}
 		if rl.IsKeyPressed(rl.KeyUp) && scrollPosition > 0 {
 			scrollPosition--
+		}
+
+		// Detect button clicks
+		mousePosition := rl.GetMousePosition()
+		for i, button := range buttons {
+			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+				buttons[i].Action()
+			}
 		}
 
 		// Check for mouse wheel input
@@ -132,30 +98,17 @@ func main() {
 		}
 
 		if rl.IsKeyPressed(rl.KeyD) {
-			if devMode {
-				devMode = false
-			} else {
-				devMode = true
-			}
+			devMode = !devMode
 		}
 
-		for _, button := range buttons {
-			if isMouseHover(button.X, button.Y, button.Width, button.Height) && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-				button.Action()
-			}
-		}
-
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.Black)
-
-		// Tile selection and drawing
 		for i, tile := range tiles {
 			// Calculate tile position
 			x := int32(i%tilesPerRow*tileWidth + 32)
 			y := int32(i/tilesPerRow*tileHeight + 32)
 
-			// Check if the mouse is over the tile
-			if isMouseHover(x, y, tileWidth, tileHeight) && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			tileRec := rl.NewRectangle(float32(x), float32(y), float32(tileWidth), float32(tileHeight))
+
+			if rl.CheckCollisionPointRec(mousePosition, tileRec) && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
 				// Mouse has clicked this tile, store the index
 				selectedTileIndex = i
 			}
@@ -173,7 +126,7 @@ func main() {
 			case "Silica":
 				iconText = "Si"
 			default:
-				iconText = "?" // Default icon for unknown resource
+				iconText = "?" // Default icon for an unknown resource
 			}
 
 			iconSize := int32(40)
@@ -185,24 +138,24 @@ func main() {
 				// Check if the tile has resources
 				if tile.ResourceAmount > 0 {
 					// Decrease the resource count on the tile
-					tiles[i].ResourceAmount-- // Update the tile within the slice
+					tiles[i].ResourceAmount--
 
 					// Find the resource with the matching type in the resources slice
 					for j, resource := range resources {
 						if resource.Name == "Silica" {
 							// Increase the resource count in the resources slice
 							resources[j].Amount++
+
 							// Check if the tile is now depleted
 							if tile.ResourceAmount == 0 {
 								// Stop the miner by changing its structure
-								tiles[i].Structure = "None" // Update the tile within the slice
+								tiles[i].Structure = "None"
 							}
 							break // Exit the loop once the resource is found
 						}
 					}
 				}
 			}
-
 		}
 
 		// Display information for the selected tile
@@ -237,7 +190,7 @@ func main() {
 
 		if devMode {
 			rl.DrawLine(rl.GetMouseX()-9999, rl.GetMouseY(), rl.GetMouseX()+9999, rl.GetMouseY(), rl.Pink)
-			rl.DrawLine(rl.GetMouseX(), rl.GetMouseY()-9999, rl.GetMouseX(), rl.GetMouseY()+9999, rl.Pink)
+			rl.DrawLine(rl.GetMouseX(), rl.GetMouseY()-9999, rl.GetMouseY(), rl.GetMouseY()+9999, rl.Pink)
 			rl.DrawText(fmt.Sprintf("X: %d\nY: %d", rl.GetMouseX(), rl.GetMouseY()), rl.GetMouseX()+8, rl.GetMouseY()+8, 20, rl.Pink)
 		}
 

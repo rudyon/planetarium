@@ -100,7 +100,7 @@ func main() {
 		{
 			X:      424,
 			Y:      278,
-			Width:  64,
+			Width:  120,
 			Height: 32,
 			Label:  "Construct",
 			Action: func() {

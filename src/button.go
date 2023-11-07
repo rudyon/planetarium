@@ -29,7 +29,7 @@ func CreateButton(x, y, width, height int32, label string, action ButtonAction, 
 	}
 }
 
-func DrawButtonTooltip(button Button) {
+func DrawButtonTooltip(button Button, container Container) {
 	// Calculate the multiline text dimensions
 	text := strings.Split(button.Tooltip, "\n")
 	textWidth := int32(0)
@@ -58,13 +58,13 @@ func DrawButtonTooltip(button Button) {
 	}
 
 	// Draw the black background rectangle to fit the multiline text
-	rl.DrawRectangle(tooltipX-8, tooltipY-8, textWidth+8, textHeight+16, rl.Black)
-	rl.DrawRectangleLines(tooltipX-8, tooltipY-8, textWidth+8, textHeight+16, rl.White)
+	rl.DrawRectangle(tooltipX-container.X, tooltipY-container.Y, textWidth+8, textHeight+16, rl.Black)
+	rl.DrawRectangleLines(tooltipX-container.X, tooltipY-container.Y, textWidth+8, textHeight+16, rl.White)
 
 	// Draw the multiline tooltip text on top of the background
 	currentY := tooltipY
 	for _, line := range text {
-		rl.DrawText(line, tooltipX, currentY, 20, rl.White)
+		rl.DrawText(line, tooltipX-container.X+5, currentY-container.Y+5, 20, rl.White)
 		currentY += 20
 	}
 }

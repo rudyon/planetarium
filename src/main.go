@@ -15,7 +15,7 @@ func main() {
 	const tileWidth = 64
 	const tileHeight = 64
 	const tilesPerRow = 5
-	const maxVisibleResources = 3
+	const maxVisibleResources = 17
 	var tiles []Tile
 	var resources []Resource
 	var structureRecipes []StructureRecipe
@@ -23,16 +23,61 @@ func main() {
 	var devMode = false
 	var selectedTileIndex int = -1
 	var maxScrollPosition int
-
-	rl.InitWindow(windowWidth, windowHeight, "Planetarium")
-	rl.SetTargetFPS(60)
-
+	var container Container
 	resources = initializeResources()
 	structureRecipes = initializeStructureRecipes()
 	tiles = createTiles()
 	solSystem := createSolSystem()
-
 	buttons := []Button{}
+
+	rl.InitWindow(windowWidth, windowHeight, "Planetarium")
+	rl.SetTargetFPS(60)
+
+	tabs := []ContainerTab{
+		{
+			"Resources",
+			func() {
+				// Draw the resources table here
+				for i := 0; i < maxVisibleResources; i++ {
+					index := i + scrollPosition
+					if index < len(resources) {
+						resource := resources[index]
+						textX := int32(16)
+						textY := int32(48 + i*20)
+						resourceText := fmt.Sprintf("%s: %d", resource.Name, resource.Amount)
+						rl.DrawText(resourceText, textX, textY, 20, rl.White)
+					}
+				}
+				rl.DrawRectangleLines(8, 40, 220, 20*maxVisibleResources+16, rl.White)
+			},
+		},
+		{
+			"Recpies",
+			func() {
+				// Draw the buttons
+				for i, button := range buttons {
+					rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)
+					rl.DrawText(button.Label, button.X+8, button.Y+8, 20, rl.White)
+
+					// Detect button clicks using the button's position
+					if rl.CheckCollisionPointRec(rl.GetMousePosition(), rl.NewRectangle(float32(button.X+container.X), float32(button.Y+container.Y), float32(button.Width), float32(button.Height))) {
+						if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+							buttons[i].Action()
+						}
+					}
+				}
+
+				// Draw tooltips for the hovered buttons
+				for _, button := range buttons {
+					if rl.CheckCollisionPointRec(rl.GetMousePosition(), rl.NewRectangle(float32(button.X+container.X), float32(button.Y+container.Y), float32(button.Width), float32(button.Height))) {
+						DrawButtonTooltip(button, container)
+					}
+				}
+			},
+		},
+	}
+
+	container = CreateContainer(380, 380, 400, 400, tabs)
 
 	for i, recipe := range structureRecipes {
 		structureName := recipe.Structure
@@ -45,7 +90,7 @@ func main() {
 		}
 		tooltip = strings.TrimSuffix(tooltip, ", ") // Remove the trailing comma and space
 
-		buttons = append(buttons, CreateButton(532, int32(390+32*i), 220, 32, buttonLabel,
+		buttons = append(buttons, CreateButton(8, int32(40+32*i), 220, 32, buttonLabel,
 			func(structureName string, requiredResources []ResourceRequirement) func() {
 				return func() {
 					if selectedTileIndex != -1 {
@@ -181,34 +226,7 @@ func main() {
 		// Draw the Sol System
 		solSystem.Draw(screenSplitHorizontal, screenSplitVertical)
 
-		// Draw the resources table
-		for i := 0; i < maxVisibleResources; i++ {
-			index := i + scrollPosition
-			if index < len(resources) {
-				resource := resources[index]
-				textX := int32(387 + 8)
-				textY := int32(387 + 8 + i*20)
-				resourceText := fmt.Sprintf("%s: %d", resource.Name, resource.Amount)
-				rl.DrawText(resourceText, textX, textY, 20, rl.White)
-			}
-		}
-		rl.DrawRectangleLines(387, 378, 140, 20*maxVisibleResources+16, rl.White)
-
-		for _, button := range buttons {
-			rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)
-			rl.DrawText(button.Label, button.X+8, button.Y+8, 20, rl.White)
-		}
-
-		// Detect button clicks
-		for i, button := range buttons {
-			if rl.CheckCollisionPointRec(mousePosition, rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) {
-				if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-					buttons[i].Action()
-				} else if button.Tooltip != "" {
-					DrawButtonTooltip(button)
-				}
-			}
-		}
+		DrawTabContainer(&container)
 
 		if devMode {
 			const lineLength = 1000 // Adjust the line length as needed

@@ -18,14 +18,7 @@ type ResourceRequirement struct {
 func initializeResources() []Resource {
 	return []Resource{
 		{"Silica", 0},
-		{"Steel", 50},
-		{"Steel Frame", 0},
-		{"Mining Drill", 0},
-		{"Control Panel", 0},
-		{"Conveyor Belt", 0},
-		{"Power Generator", 0},
-		{"Copper Wire", 0},
-		{"Electronic Circuit", 0},
-		{"Hydrolic Pump", 0},
+		{"Iron", 10},
+		{"Helium", 0},
 	}
 }

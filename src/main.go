@@ -26,12 +26,19 @@ func main() {
 	var container Container
 	resources = initializeResources()
 	structureRecipes = initializeStructureRecipes()
-	tiles = createTiles()
 	solSystem := createSolSystem()
+	selectedCelestialIndex := 3
+	selectedCelestial := solSystem.Celestials[selectedCelestialIndex]
+	selectedCelestialLabel := selectedCelestial.Name
+	tiles = selectedCelestial.Tiles
+	recpieButtons := []Button{}
 	buttons := []Button{}
 
 	rl.InitWindow(windowWidth, windowHeight, "Planetarium")
 	rl.SetTargetFPS(60)
+
+	// TODO tick based time passing
+	// TODO lots of code is being reused (i am sorry)
 
 	tabs := []ContainerTab{
 		{
@@ -55,20 +62,20 @@ func main() {
 			"Recpies",
 			func() {
 				// Draw the buttons
-				for i, button := range buttons {
+				for i, button := range recpieButtons {
 					rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)
 					rl.DrawText(button.Label, button.X+8, button.Y+8, 20, rl.White)
 
 					// Detect button clicks using the button's position
 					if rl.CheckCollisionPointRec(rl.GetMousePosition(), rl.NewRectangle(float32(button.X+container.X), float32(button.Y+container.Y), float32(button.Width), float32(button.Height))) {
 						if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-							buttons[i].Action()
+							recpieButtons[i].Action()
 						}
 					}
 				}
 
 				// Draw tooltips for the hovered buttons
-				for _, button := range buttons {
+				for _, button := range recpieButtons {
 					if rl.CheckCollisionPointRec(rl.GetMousePosition(), rl.NewRectangle(float32(button.X+container.X), float32(button.Y+container.Y), float32(button.Width), float32(button.Height))) {
 						DrawButtonTooltip(button, container)
 					}
@@ -78,6 +85,26 @@ func main() {
 	}
 
 	container = CreateContainer(380, 380, 400, 400, tabs)
+
+	buttons = append(buttons, CreateButton(32, screenSplitHorizontal-16, 200, 32, selectedCelestialLabel, nil, ""))
+	buttons = append(buttons, CreateButton(200+48, screenSplitHorizontal-16, 32, 32, "<", func() {
+		if selectedCelestialIndex > 0 {
+			selectedCelestialIndex--
+			selectedCelestial = solSystem.Celestials[selectedCelestialIndex]
+			tiles = selectedCelestial.Tiles
+			selectedCelestialLabel = selectedCelestial.Name
+			buttons[0] = CreateButton(32, screenSplitHorizontal-16, 200, 32, selectedCelestialLabel, nil, "")
+		}
+	}, ""))
+	buttons = append(buttons, CreateButton(200+48*2, screenSplitHorizontal-16, 32, 32, ">", func() {
+		if selectedCelestialIndex < len(solSystem.Celestials)-1 {
+			selectedCelestialIndex++
+			selectedCelestial = solSystem.Celestials[selectedCelestialIndex]
+			tiles = selectedCelestial.Tiles
+			selectedCelestialLabel = selectedCelestial.Name
+			buttons[0] = CreateButton(32, screenSplitHorizontal-16, 200, 32, selectedCelestialLabel, nil, "")
+		}
+	}, ""))
 
 	for i, recipe := range structureRecipes {
 		structureName := recipe.Structure
@@ -90,7 +117,7 @@ func main() {
 		}
 		tooltip = strings.TrimSuffix(tooltip, ", ") // Remove the trailing comma and space
 
-		buttons = append(buttons, CreateButton(8, int32(40+32*i), 220, 32, buttonLabel,
+		recpieButtons = append(recpieButtons, CreateButton(8, int32(40+32*i), 220, 32, buttonLabel,
 			func(structureName string, requiredResources []ResourceRequirement) func() {
 				return func() {
 					if selectedTileIndex != -1 {
@@ -176,20 +203,13 @@ func main() {
 				rl.DrawRectangleLines(x, y, tileWidth, tileHeight, rl.White)
 			}
 
-			// Determine the icon text based on the resource type
-			iconText := ""
-			switch tiles[i].ResourceType {
-			case "Silica":
-				iconText = "Si"
-			default:
-				iconText = "?" // Default icon for an unknown resource
-			}
-
+			iconText := getResourceIcon(tile.ResourceType)
 			iconSize := int32(40)
 			iconX := x + tileWidth/2 - int32(rl.MeasureText(iconText, iconSize)/2)
 			iconY := y + tileHeight/2 - iconSize/2
 			rl.DrawText(iconText, iconX, iconY, int32(iconSize), rl.White)
 
+			// TODO this needs to be dynamic & tick system
 			if tile.Structure == "Miner" && tile.ResourceType == "Silica" {
 				// Check if the tile has resources
 				if tile.ResourceAmount > 0 {
@@ -224,7 +244,19 @@ func main() {
 		}
 
 		// Draw the Sol System
-		solSystem.Draw(screenSplitHorizontal, screenSplitVertical)
+		solSystem.Draw(screenSplitHorizontal, screenSplitVertical, selectedCelestial)
+
+		for i, button := range buttons {
+			rl.DrawRectangleLines(button.X, button.Y, button.Width, button.Height, rl.White)
+			rl.DrawText(button.Label, button.X+8, button.Y+8, 20, rl.White)
+
+			// Detect button clicks using the button's position
+			if rl.CheckCollisionPointRec(rl.GetMousePosition(), rl.NewRectangle(float32(button.X), float32(button.Y), float32(button.Width), float32(button.Height))) {
+				if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+					buttons[i].Action()
+				}
+			}
+		}
 
 		DrawTabContainer(&container)
 

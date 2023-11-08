@@ -11,8 +11,9 @@ type Celestial struct {
 	Color         rl.Color
 	Angle         float64
 	RotationSpeed float64
+	Tiles         []Tile
 }
 
 func NewCelestial(name string, celest_type string, radius float32, color rl.Color) Celestial {
-	return Celestial{Name: name, Type: celest_type, Radius: radius, Color: color}
+	return Celestial{Name: name, Type: celest_type, Radius: radius, Color: color, Tiles: createTiles(celest_type)}
 }

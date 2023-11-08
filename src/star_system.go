@@ -23,7 +23,7 @@ func NewStarSystem(celestials []Celestial) StarSystem {
 	return StarSystem{Celestials: celestials}
 }
 
-func (s *StarSystem) Draw(screenSplitHorizontal, screenSplitVertical float32) {
+func (s *StarSystem) Draw(screenSplitHorizontal, screenSplitVertical float32, selectedCelelestial Celestial) {
 	numCelestials := len(s.Celestials)
 	totalDistance := float32(0)
 
@@ -48,6 +48,10 @@ func (s *StarSystem) Draw(screenSplitHorizontal, screenSplitVertical float32) {
 		// Calculate the coordinates for the bottom left quarter
 		x := float32(bottomLeftX) + totalDistance*float32(math.Cos(celestial.Angle))
 		y := bottomLeftY + totalDistance*float32(math.Sin(celestial.Angle))
+
+		if celestial.Name == selectedCelelestial.Name {
+			rl.DrawCircle(int32(x), int32(y), float32(celestial.Radius+2), rl.White)
+		}
 
 		rl.DrawCircle(int32(x), int32(y), float32(celestial.Radius), celestial.Color)
 
